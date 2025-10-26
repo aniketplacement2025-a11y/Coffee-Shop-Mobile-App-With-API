@@ -1,7 +1,7 @@
 // home_page_footer.dart
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../screen/home_page.dart'; // Import to use HomePageTab enum
+import 'Tab/home_page_tab.dart'; // Import to use HomePageTab enum
 
 class HomePageFooter extends StatelessWidget {
   final HomePageTab currentTab;

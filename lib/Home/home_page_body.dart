@@ -2,260 +2,221 @@
 import 'package:flutter/material.dart';
 import '../models/coffee_model.dart';
 import 'coffee_card.dart';
+import '../services/coffee_api_service.dart';
 
-class HomePageBody extends StatelessWidget {
+class HomePageBody extends StatefulWidget {
   const HomePageBody({super.key});
 
-  static const List<Coffee> coffeeList = [
-    Coffee(
-        imagePath: 'assets/Coffee-shop/Caffe Mocha.png',
-        title: 'Caffe Mocha',
-        subtitle: 'Deep Foam',
-        category: 'All Coffee',
-        rating: 4.8,
-        reviewCount: 230,
-        description: 'Rich chocolate and espresso blend with creamy foam',
-        necessary_supplies: '',
-        necessaryTools: '',
-        price: 4.53),
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Flat White.png',
-      title: 'Flat White',
-      subtitle: 'Espresso',
-      category: 'Machiato',
-      rating: 4.6,
-      reviewCount: 180,
-      description: 'Smooth and velvety texture with double shot espresso',
-      necessary_supplies: 'Fresh whole milk\nEspresso beans\nMilk thermometer\nCleaning cloths\nCoffee filters',
-      necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Espresso Cups (\$10)\n'
-          'Steam Pitcher (\$15)',
-      price: 3.53,
-    ),
+  @override
+  State<HomePageBody> createState() => _HomePageBodyState();
+}
 
-    Coffee(
-        imagePath: 'assets/Coffee-shop/Traditional_Italian_Machiato.png',
-        title: 'Traditional Italian Macchiato',
-        subtitle: 'Espresso',
-        category: 'Machiato',
-        rating: 4.8,
-        reviewCount: 280,
-        description: 'very espresso-forward drink.its magic on the crema, softening it and balancing it out',
-        necessary_supplies: 'Fresh Roasted Coffee \nFiltered Water\nFresh Whole Milk',
-        necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-            'Quality Burr Grinder (\$150 minimum)\n'
-            'Espresso Tamper (\$25 minimum)\n'
-            'Espresso Cups (\$10)\n'
-            'Steam Pitcher (\$15)',
-        price: 3.56),
-    Coffee(
-      imagePath: 'assets/Coffee-shop/caramel macchiato.png',
-      title: 'Caramel Macchiato',
-      subtitle: 'Espresso with Milk and Caramel',
-      category: 'Macchiato',
-      rating: 4.9,
-      reviewCount: 420,
-      description:
-      'A sweet and creamy espresso-based drink made with steamed milk, vanilla syrup, and topped with rich caramel drizzle. It offers a perfect balance of strong espresso and smooth sweetness.',
-      necessary_supplies:
-      'Fresh Roasted Espresso Beans\nFiltered Water\nWhole Milk\nVanilla Syrup\nCaramel Sauce',
-      necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Espresso Cups (\$10)\n'
-          'Steam Pitcher (\$15)\n'
-          'Spoon or Drizzle Bottle for Caramel',
-      price: 4.25,
-    ),
+class _HomePageBodyState extends State<HomePageBody>{
+  List<Coffee> coffeeList = [];
+  List<Coffee> _allCoffees = []; // Cache all coffees - Optimization 1
+  List<String> categories = ['All Coffee']; // start with just 'All Coffee'
+  bool isLoading = true;
+  bool isCategoryLoading = false; // Secondary loading state - Optimization 3
+  String errorMessage = '';
+  String _selectedCategory = 'All Coffee';
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Double Macchiato Espresso.png',
-      title: 'Double Macchiato Espresso',
-      subtitle: 'Espresso',
-      category: 'Macchiato',
-      rating: 4.9,
-      reviewCount: 340,
-      description:
-      'A strong, bold espresso shot topped with just a dash of steamed milk — '
-          'delivering a richer, double-strength macchiato experience with intense flavor and aroma.',
-      necessary_supplies: 'Freshly Roasted Coffee Beans\nFiltered Water\nFresh Whole Milk',
-      necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Espresso Cups (\$10)\n'
-          'Steam Pitcher (\$15)',
-      price: 4.25,
-    ),
+  @override
+  void initState(){
+    super.initState();
+    _loadCoffees();
+    _loadCategories(); // Load categories from API - Optimization 2
+  }
 
-    Coffee(
-        imagePath: 'assets/Coffee-shop/Caffe Latte.png',
-        title: 'Caffe Latte',
-        subtitle: 'Steamed Milk',
-        category: 'Latte',
-        rating: 4.5,
-        reviewCount: 150,
-        description: 'Creamy milk with rich espresso and light foam',
-        necessary_supplies: '',
-        necessaryTools: '',
-        price: 4.10),
+  Future<void> _loadCoffees() async {
+    //'Future<void>' is Asynchronous method (it takes time to complete, so we use await).
+    try {
+      final coffees = await CoffeeApiService.getAllCoffees();
+      //'CoffeeApiService.getAllCoffees()' makes an HTTP GET request to your backend and retrieves JSON data.
+      setState(() {
+        _allCoffees = coffees; // Cache them - Optimization 1
+        coffeeList = coffees;
+        isLoading = false;
+      });
+    } catch(e){
+      setState(() {      // 'setState' tells Flutter that data has changed, so the UI should rebuild
+       errorMessage = 'Failed to load coffees: $e';
+       isLoading = false;
+      });
+      print('Error loading coffees: $e');
+    }
+  }
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Earl Grey latte.png',
-      title: 'Earl Grey Latte',
-      subtitle: 'Black Tea with Steamed Milk',
-      category: 'Latte',
-      rating: 4.6,
-      reviewCount: 120,
-      description: 'A soothing combination of Earl Grey tea, steamed milk, and a hint of vanilla — smooth, aromatic, and lightly floral.',
-      necessary_supplies: 'Earl Grey Tea Leaves or Tea Bags\nHot Water\nMilk (preferably whole or oat)\nVanilla Syrup or Extract\nSugar or Honey (optional)',
-      necessaryTools: 'Teapot or Kettle (\$25 minimum)\nMilk Frother or Steam Wand (\$30 minimum)\nMug or Latte Cup (\$10)\nMeasuring Spoon (\$5)\nSmall Whisk (\$8)',
-      price: 4.50,
-    ),
+  // Load categories from API - Optimization 2
+  Future<void> _loadCategories() async {
+    try {
+      final apiCategories = await CoffeeApiService.getCategories();
+      // Create a Set to remove duplicates, then convert to List
+      final uniqueCategories = {'All Coffee', ...apiCategories}.toList();
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Pumpkin spice latte.png',
-      title: 'Pumpkin Spice Latte',
-      subtitle: 'Espresso with Pumpkin & Spices',
-      category: 'Latte',
-      rating: 4.9,
-      reviewCount: 520,
-      description: 'A cozy blend of espresso, steamed milk, pumpkin purée, and warm spices like cinnamon, nutmeg, and clove — topped with whipped cream for a perfect autumn treat.',
-      necessary_supplies: 'Freshly Brewed Espresso\nSteamed Milk\nPumpkin Purée\nPumpkin Spice Mix (Cinnamon, Nutmeg, Clove)\nWhipped Cream\nSugar or Sweetener',
-      necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Espresso Cups (\$10)\n'
-          'Steam Pitcher (\$15)\n'
-          'Small Saucepan (\$20)',
-      price: 4.75,
-    ),
+      setState(() {
+        categories = uniqueCategories;
+      });
+    } catch(e) {
+      print('Failed to load categories: $e');
+      // If categories fail to load, we'll use the default hardcoded ones as fallback
+      setState(() {
+        categories = ['All Coffee', 'Machiato', 'Latte', 'Americano'];
+      });
+    }
+  }
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Matcha latte.png',
-      title: 'Matcha Latte',
-      subtitle: 'Green Tea + Milk',
-      category: 'Latte',
-      rating: 4.7,
-      reviewCount: 310,
-      description:
-      'A creamy and energizing blend of high-quality matcha green tea powder whisked into steamed milk, offering a smooth, earthy flavor with gentle sweetness.',
-      necessary_supplies: 'Premium Matcha Powder\nFiltered Water\nFresh Whole Milk\nOptional Sweetener (Honey or Sugar)',
-      necessaryTools: 'Matcha Bowl (Chawan) (\$20 minimum)\n'
-          'Matcha Whisk (Chasen) (\$15 minimum)\n'
-          'Fine Sifter (\$10)\n'
-          'Spoon or Scoop (\$5)\n'
-          'Milk Frother or Steam Wand (\$25 minimum)',
-      price: 4.25,
-    ),
+  void _handleCategoryFilter(String category){
+    setState((){
+      _selectedCategory =  category;
+    });
 
-    Coffee(
-        imagePath: 'assets/Coffee-shop/Cappuccino.png',
-        title: 'Cappuccino',
-        subtitle: 'Rich & Dark',
-        category: 'Americano',
-        rating: 4.7,
-        reviewCount: 200,
-        description:
-            'Classic Italian coffee with equal parts espresso, milk, and foam',
-        necessary_supplies: '',
-        necessaryTools: '',
-        price: 4.20),
+    if(category == 'All Coffee'){
+      // Use cached data instead of API call - Optimization 1
+      setState(() {
+        coffeeList = _allCoffees;
+      });
+    } else{
+     _loadCoffeesByCategory(category);
+    }
+  }
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Iced Caffe Americano.png',
-      title: 'Iced Caffè Americano',
-      subtitle: 'Cool & Bold',
-      category: 'Americano',
-      rating: 4.8,
-      reviewCount: 340,
-      description:
-      'A refreshing, bold espresso drink made by diluting rich espresso shots with cold water and ice, offering a smooth yet intense flavor.',
-      necessary_supplies: 'Ice cubes\nChilled water\nFreshly brewed espresso',
-      necessaryTools: 'Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Tall Glasses (\$10)\n'
-          'Stirring Spoon (\$5)',
-      price: 4.50,
-    ),
+  Future<void> _loadCoffeesByCategory(String category) async {
+    setState(() {
+      isCategoryLoading = true; // Optimization 3
+    });
 
-    Coffee(
-      imagePath: 'assets/Coffee-shop/Americano Coffee Cup.png',
-      title: 'Americano Coffee Cup',
-      subtitle: 'Bold & Smooth',
-      category: 'Americano',
-      rating: 4.5,
-      reviewCount: 150,
-      description:
-      'Americano is a classic coffee made by diluting espresso with hot water, giving it a smooth yet bold flavor without the heaviness of milk.',
-      necessary_supplies: 'Coffee Beans, Hot Water',
-      necessaryTools: 'Pump Driven Espresso Machine (\$250 minimum)\n'
-          'Quality Burr Grinder (\$150 minimum)\n'
-          'Espresso Tamper (\$25 minimum)\n'
-          'Espresso Cups (\$10)\n'
-          'Steam Pitcher (\$15)',
-      price: 3.80,
-    ),
-  ];
+    try {
+      final coffees = await CoffeeApiService.getCoffeesByCategory(category);
+      setState(() {
+        coffeeList = coffees;
+        isCategoryLoading = false; // Optimization 3
+      });
+    } catch(e){
+      setState((){
+        errorMessage = 'Failed to load $category coffees: $e';
+        isCategoryLoading = false; // Optimization 3
+      });
+      print('Error load $category coffees: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 0), // Reduced since header is positioned
-          const FilterTabs(),
-          const SizedBox(height: 24),
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC67C4E)),
+        ),
+      );
+    }
+
+    if (errorMessage.isNotEmpty) {
+      return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                errorMessage,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadCoffees,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC67C4E),
+                ),
+                child: const Text(
+                    'Retry', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          )
+      );
+    }
+    return Column(
+      children: [
+        const SizedBox(height: 0), // Reduced since header is positioned
+        FilterTabs(
+          categories: categories, // Pass dynamic categories - Optimization 2
+          selectedCategory: _selectedCategory,
+          onCategorySelected: _handleCategoryFilter,
+        ),
+        const SizedBox(height: 24),
+
+        // Show loading indicator for category switching - Optimization 3
+        if (isCategoryLoading)
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC67C4E)),
+            ),)
+        else
+          Expanded(child: //Use Expanded for proper grid layout
           Padding(
             // Adds space around the GridView (on left and right because of horizontal).
             padding: const EdgeInsets.symmetric(
                 horizontal:
-                    30.0), //Adds 30 pixels of padding on the left and right sides.
-            child: GridView.builder(
+                30.0), //Adds 30 pixels of padding on the left and right sides.
+            child: coffeeList.isEmpty
+                ? const Center(
+              child: Text(
+                'No coffees found',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+                : GridView.builder(
               //Dynamically builds grid items on demand using a builder function — efficient for lists that can grow.
               physics:
-                  const NeverScrollableScrollPhysics(), //Disables scrolling for this GridView.
-              shrinkWrap:
-                  true, //Tells GridView to shrink to fit its content instead of taking infinite height.
+              const BouncingScrollPhysics(),
+              //Disables scrolling for this GridView.
+              // shrinkWrap:
+              //     true, //Tells GridView to shrink to fit its content instead of taking infinite height.
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 //Defines how the grid is arranged (columns, spacing, aspect ratio).
                 //Used when you want a fixed number of columns.
-                crossAxisCount: 2, //Defines 2 columns in each grid row.
+                crossAxisCount: 2,
+                //Defines 2 columns in each grid row.
                 mainAxisExtent: 270,
-                crossAxisSpacing: 15, //Space between columns.
-                mainAxisSpacing: 20, //Space between rows.
+                crossAxisSpacing: 15,
+                //Space between columns.
+                mainAxisSpacing: 20,
+                //Space between rows.
                 childAspectRatio:
-                    0.60, //Controls the width-to-height ratio of each grid item
+                0.60, //Controls the width-to-height ratio of each grid item
               ),
-              itemCount: coffeeList.length, //Number of items to build
+              itemCount: coffeeList.length,
+              //Number of items to build
               itemBuilder: (context, index) {
                 //Function that builds each grid item dynamically.
                 final coffee = coffeeList[
-                    index]; //Fetches a single coffee object from the list.
+                index]; //Fetches a single coffee object from the list.
                 return CoffeeCard(
                     coffee:
-                        coffee); //Custom widget that displays coffee details.
+                    coffee); //Custom widget that displays coffee details.
               },
             ),
-          ),
-          const SizedBox(height: 20),
+          ),),
+            const SizedBox(height: 20),
         ],
-      ),
-    );
+      );
+    }
   }
-}
 
-class FilterTabs extends StatefulWidget {
-  const FilterTabs({super.key});
 
-  @override
-  State<FilterTabs> createState() => _FilterTabsState();
-}
+class FilterTabs extends StatelessWidget {
+  final List<String> categories;
+  final String selectedCategory;
+  final Function(String) onCategorySelected;
 
-class _FilterTabsState extends State<FilterTabs> {
-  String _selectedCategory = 'All Coffee';
+  const FilterTabs({
+    super.key,
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategorySelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -264,43 +225,35 @@ class _FilterTabsState extends State<FilterTabs> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(left: 30),
-        children: ['All Coffee', 'Machiato', 'Latte', 'Americano']
-            .map((category) => Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _selectedCategory = category;
-              });
-              // You can add additional logic here when a category is selected
-              print('Selected category: $category');
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Chip(
-              label: Text(category,
+        children: categories.map((category) {
+          final isSelected = category == selectedCategory;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: InkWell(
+              onTap: () => onCategorySelected(category),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFC67C4E) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFFC67C4E) : const Color(0xFFDEDEDE),
+                    width: 1,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  category,
                   style: TextStyle(
-                      color: category == _selectedCategory
-                          ? Colors.white
-                          : const Color(0xFF2F2D2C),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600)),
-              backgroundColor: category == _selectedCategory
-                  ? const Color(0xFFC67C4E)
-                  : Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              side: BorderSide(
-                color: category == _selectedCategory
-                    ? const Color(0xFFC67C4E)
-                    : const Color(0xFFDEDEDE),
-                width: 1,
+                    color: isSelected ? Colors.white : const Color(0xFF2F2D2C),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
-          ),
-        ))
-            .toList(),
+          );
+        }).toList(),
       ),
     );
   }

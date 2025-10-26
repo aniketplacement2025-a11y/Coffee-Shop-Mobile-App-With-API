@@ -1,11 +1,19 @@
 // coffee_card.dart
+import 'package:coffe_application_ui_figma/services/coffee_api_service.dart';
 import 'package:flutter/material.dart';
 import '../models/coffee_model.dart';
 import 'dart:ui';
 
 class CoffeeCard extends StatelessWidget {
   final Coffee coffee;
-  const CoffeeCard({super.key, required this.coffee});
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
+
+  const CoffeeCard({super.key,
+    required this.coffee,
+    this.isFavorite = false,
+    this.onFavoriteToggle
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +82,13 @@ class CoffeeCard extends StatelessWidget {
                     },
                   ),
                 ),
-                const Positioned(top: 8, left: 8, child: StarRating()),
+                Positioned(top: 8, left: 8, child: StarRating(rating: coffee.rating)),
+                // Favorite heart on top-right
+                Positioned(top: 8, right: 8, child: FavoriteHeart(
+                    coffeeId: coffee.id,
+                    initialFavorite: isFavorite,
+                    onFavoriteToggle: onFavoriteToggle)
+                ),
               ],
             ),
 
@@ -116,8 +130,117 @@ class CoffeeCard extends StatelessWidget {
   }
 }
 
+class FavoriteHeart extends StatefulWidget {
+  final int coffeeId;
+  final bool initialFavorite;
+  final VoidCallback? onFavoriteToggle;
+
+  const FavoriteHeart({
+    super.key,
+    required this.coffeeId,
+    this.initialFavorite = false,
+    this.onFavoriteToggle,
+  });
+
+  @override
+  State<FavoriteHeart> createState() => _FavoriteHeartState();
+}
+
+class _FavoriteHeartState extends State<FavoriteHeart>{
+  //local state to track favorite status
+  late bool _isFavorite;
+   bool _isLoading = false;
+
+  @override
+  void initState(){
+    super.initState();
+    //Initialize with the provided initial State
+    _isFavorite = widget.initialFavorite;
+  }
+
+  // //Method to load favorite state from SharedPreferences or local storage
+  // Future<void> _loadFavoriteState() async {
+  //   //We can implement local storage here later
+  //   //For now, we'll just use the initial state
+  // }
+  //
+  // //Method to save favorite state to local storage
+  // Future<void> _saveFavoriteState() async {
+  //   //U can implement local storage saving here later
+  //   //Example with SharedPreferences:
+  //   //final prefs = await SharedPreferences.getInstance();
+  //   //await prefs.setBool('favorite_${widget.coffeeId}', _isFavorite);
+  // }
+
+  Future<void> _toggleFavorite() async{
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+   try {
+     final newFavoriteStatus = !_isFavorite;
+     final success = await CoffeeApiService.toggleFavorite(
+         widget.coffeeId,
+         newFavoriteStatus
+     );
+     if (success) {
+       setState(() {
+         _isFavorite = newFavoriteStatus;
+       });
+       if (widget.onFavoriteToggle != null) {
+         widget.onFavoriteToggle!();
+           }
+         }
+     else print('Failed to toggle favorite');
+        } catch(e){
+      print('Error toggling favorite: $e');
+     } finally {
+       setState(() {
+         _isLoading = false;
+       });
+     }
+    }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _isLoading ? null : _toggleFavorite,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          shape: BoxShape.circle,
+        ),
+        child:
+            _isLoading? const SizedBox(
+              width:20,
+              height:20,
+              child:CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : Icon(
+          _isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: _isFavorite ? Colors.red : Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
+
 class StarRating extends StatelessWidget {
-  const StarRating({super.key});
+  final double rating;
+
+  const StarRating({
+    super.key,
+    required this.rating,
+  });
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -128,11 +251,13 @@ class StarRating extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           color: Colors.black.withOpacity(0.2),
-          child: const Row(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.star, color: Colors.amber, size: 14),
+              const Icon(Icons.star, color: Colors.amber, size: 14),
               SizedBox(width: 4),
-              Text('4.8',
+              Text(
+                  rating.toStringAsFixed(1),
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

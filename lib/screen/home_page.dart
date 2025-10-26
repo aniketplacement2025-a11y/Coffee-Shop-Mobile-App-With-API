@@ -14,14 +14,15 @@ import '../Home/cart_page_body.dart';
 import '../Home/notifications_page_body.dart';
 import '../Home/home_page_header.dart';
 import '../Home/home_page_footer.dart';
+import '../Home/Tab/home_page_tab.dart';
 
 // Add this enum to represent different pages
-enum HomePageTab {
-  home,
-  favorite,
-  cart,
-  notifications,
-}
+// enum HomePageTab {
+//   home,
+//   favorite,
+//   cart,
+//   notifications,
+// }
 
 // Create a stateful widget for the main home page
 class HomePage extends StatefulWidget {
