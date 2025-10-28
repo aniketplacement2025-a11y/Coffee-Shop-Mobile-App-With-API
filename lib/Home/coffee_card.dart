@@ -117,7 +117,8 @@ class CoffeeCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               fontSize: 18,
                               color: Color(0xFF2F4B4E))),
-                      const AddButton(),
+                      // const AddButton(), Old One Before Add to Cart Navigation.
+                      AddButton(coffee: coffee),
                     ],
                   ),
                 ],
@@ -269,18 +270,49 @@ class StarRating extends StatelessWidget {
     );
   }
 }
+  //OLD ONE JUST A STATIC BUTTON WITHOUT ADD TO CART
+// class AddButton extends StatelessWidget {
+//   const AddButton({super.key});
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       width: 32,
+//       height: 32,
+//       decoration: BoxDecoration(
+//           color: const Color(0xFFC67C4E),
+//           borderRadius: BorderRadius.circular(10)),
+//       child: const Icon(Icons.add, color: Colors.white),
+//     );
+//   }
 
-class AddButton extends StatelessWidget {
-  const AddButton({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-          color: const Color(0xFFC67C4E),
-          borderRadius: BorderRadius.circular(10)),
-      child: const Icon(Icons.add, color: Colors.white),
-    );
+  //NEW UPDATED CoffeeCard WITH Add to Cart
+  class AddButton extends StatelessWidget {
+    final Coffee coffee;
+    const AddButton({super.key, required this.coffee});
+
+    @override
+    Widget build(BuildContext context){
+      return GestureDetector(
+        onTap: (){
+          //Navigate to detail page for size selection
+          Navigator.pushNamed(
+            context,
+            '/detail',
+            arguments: coffee,
+          );
+        },
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: const Color(0xFFC67C4E),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.add,color: Colors.white),
+        )
+      );
+    }
+    // Also update the usage in CoffeeCard:
+    // In the Row where u have AddButton, change it to:
+    // AddButton(coffee:coffee).
   }
-}

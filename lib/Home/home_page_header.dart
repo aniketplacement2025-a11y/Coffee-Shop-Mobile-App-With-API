@@ -7,9 +7,7 @@ class HomePageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
+    return Container(
           width: double.infinity,
           color: const Color(0xFF131313),
           child: Padding(
@@ -52,7 +50,7 @@ class HomePageHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 15),
                 const TextField(
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
@@ -70,32 +68,32 @@ class HomePageHeader extends StatelessWidget {
               ],
             ),
           ),
-        ),
-        Transform.translate(
-          offset: const Offset(0, -24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Container(
-              height: 140,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-                color: Colors.transparent, // Optional: add background color
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/Coffee-shop/Banner.png',
-                  fit: BoxFit.cover, // or BoxFit.fitWidth
-                  width: double.infinity,
-                  height: 140,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+        );
+    //     Transform.translate(
+    //       offset: const Offset(0, -24),
+    //       child: Padding(
+    //         padding: const EdgeInsets.symmetric(horizontal: 30),
+    //         child: Container(
+    //           height: 140,
+    //           width: double.infinity,
+    //           decoration: BoxDecoration(
+    //             borderRadius: BorderRadius.all(Radius.circular(16)),
+    //             color: Colors.transparent, // Optional: add background color
+    //           ),
+    //           child: ClipRRect(
+    //             borderRadius: BorderRadius.circular(16),
+    //             child: Image.asset(
+    //               'assets/Coffee-shop/Banner.png',
+    //               fit: BoxFit.cover, // or BoxFit.fitWidth
+    //               width: double.infinity,
+    //               height: 140,
+    //             ),
+    //           ),
+    //         ),
+    //       ),
+    //     ),
+    //   ],
+    // );
   }
 }
 

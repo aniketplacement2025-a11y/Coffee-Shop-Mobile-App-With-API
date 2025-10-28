@@ -133,15 +133,57 @@ class _HomePageBodyState extends State<HomePageBody>{
           )
       );
     }
-    return Column(
-      children: [
-        const SizedBox(height: 0), // Reduced since header is positioned
-        FilterTabs(
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.zero, // ✅ no extra padding
+        child: Column(
+          children: [
+            // PROMO BANNER - MOVED FROM HEADER TO BODY
+            // Transform.translate(
+            //   offset: const Offset(0, -24),
+            //   child: Padding(
+            //     padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+            //     child: Container(
+            //       height: 140,
+            //       width: double.infinity,
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.all(Radius.circular(16)),
+            //         color: Colors.transparent,
+            //       ),
+            //       child: ClipRRect(
+            //         borderRadius: BorderRadius.circular(16),
+            //         child: Image.asset(
+            //           'assets/Coffee-shop/Banner.png',
+            //           fit: BoxFit.cover,
+            //           width: double.infinity,
+            //           height: 140,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8), // small gap from search bar
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/Coffee-shop/Banner.png',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 140,
+                ),
+              ),
+            ),
+
+
+            const SizedBox(height: 10), // Space between banner and filter tabs
+
+            FilterTabs(
           categories: categories, // Pass dynamic categories - Optimization 2
           selectedCategory: _selectedCategory,
           onCategorySelected: _handleCategoryFilter,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 15),
 
         // Show loading indicator for category switching - Optimization 3
         if (isCategoryLoading)
@@ -151,7 +193,7 @@ class _HomePageBodyState extends State<HomePageBody>{
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC67C4E)),
             ),)
         else
-          Expanded(child: //Use Expanded for proper grid layout
+          //Expanded(child: //Use Expanded for proper grid layout
           Padding(
             // Adds space around the GridView (on left and right because of horizontal).
             padding: const EdgeInsets.symmetric(
@@ -170,10 +212,10 @@ class _HomePageBodyState extends State<HomePageBody>{
                 : GridView.builder(
               //Dynamically builds grid items on demand using a builder function — efficient for lists that can grow.
               physics:
-              const BouncingScrollPhysics(),
+              const NeverScrollableScrollPhysics(),
               //Disables scrolling for this GridView.
-              // shrinkWrap:
-              //     true, //Tells GridView to shrink to fit its content instead of taking infinite height.
+               shrinkWrap:
+                   true, //Tells GridView to shrink to fit its content instead of taking infinite height.
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 //Defines how the grid is arranged (columns, spacing, aspect ratio).
                 //Used when you want a fixed number of columns.
@@ -198,9 +240,9 @@ class _HomePageBodyState extends State<HomePageBody>{
                     coffee); //Custom widget that displays coffee details.
               },
             ),
-          ),),
+          ),
             const SizedBox(height: 20),
-        ],
+        ], ),
       );
     }
   }

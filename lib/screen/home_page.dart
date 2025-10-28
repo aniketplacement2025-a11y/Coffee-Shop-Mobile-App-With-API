@@ -76,10 +76,10 @@ class _HomePageState extends State<HomePage> {
 
               // Body content (scrollable) - positioned below header and above footer
               Positioned(
-                top: 304, // Adjust based on your header height
+                top: 150, // Adjust based on your header height
                 left: 0,
                 right: 0,
-                bottom: 88, // Space for footer
+                bottom: 50, // Space for footer
                 child: _getCurrentBody(),
               ),
 

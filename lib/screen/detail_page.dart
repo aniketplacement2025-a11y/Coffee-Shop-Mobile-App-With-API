@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 //     as f2f;
 import 'dart:ui';
 import '../models/coffee_model.dart'; // Import from model file
+import '../services/cart_service.dart';
 
 class DetailPage extends StatefulWidget {
   final Coffee coffee;
@@ -19,6 +20,40 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   String _selectedSize = 'M';
+
+  //Cart Integration Starts From Here to 'Widget.build(BuildContext context)'
+  final CartService _cartService = CartService();
+
+  //Calculate price based on size
+  double get _sizeAdjustedPrice {
+    switch (_selectedSize) {
+      case 'S':
+        return widget.coffee.price * 0.8; // 20% less for small
+      case 'L':
+        return widget.coffee.price * 1.2; //20% more for large
+      case 'M':
+      default:
+        return widget.coffee.price;
+    }
+  }
+
+  void _addToCart() {
+    _cartService.addToCart(
+      widget.coffee,
+      size: _selectedSize,
+    );
+
+    //Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${widget.coffee.title} added to cart!'),
+        backgroundColor: const Color(0xFFC67C4E),
+      ),
+    );
+
+    //Navigate back or to cart
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +212,7 @@ class _DetailPageState extends State<DetailPage> {
         RichText(
           text: TextSpan(
             style:
-                const TextStyle(fontSize: 15, color: Colors.grey, height: 1.5),
+            const TextStyle(fontSize: 15, color: Colors.grey, height: 1.5),
             children: [
               TextSpan(text: widget.coffee.description),
               const TextSpan(
@@ -243,6 +278,43 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
       ),
+    );
+  }
+
+
+  //Add to your build method - Add the price display and add to cart button
+  Widget _buildPriceAndAddButton() {
+    return Column(
+      children: [
+        Text(
+          '\$${_sizeAdjustedPrice.toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2F4B4E),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: _addToCart,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFC67C4E),
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text(
+            'Add to Cart',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
