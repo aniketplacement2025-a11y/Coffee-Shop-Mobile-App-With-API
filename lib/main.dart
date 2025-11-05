@@ -50,9 +50,8 @@ class MyApp extends StatelessWidget {
           return DetailPage(coffee: args ?? sampleCoffee);
         },
         '/order': (context) {
-          // Get the coffee data from arguments
-          final args = ModalRoute.of(context)!.settings.arguments as Coffee?;
-          return OrderPage(coffee: args ?? sampleCoffee);
+          //  OrderPage no longer need coffee parameter - it uses CartService
+          return const OrderPage();
         },
         '/delivery': (context) => const DeliveryPage(),
       },

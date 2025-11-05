@@ -5,7 +5,12 @@ import 'coffee_card.dart';
 import '../services/coffee_api_service.dart';
 
 class HomePageBody extends StatefulWidget {
-  const HomePageBody({super.key});
+  final String searchQuery; //For search a coffee
+
+  const HomePageBody({
+    super.key,
+    this.searchQuery = '',
+  });
 
   @override
   State<HomePageBody> createState() => _HomePageBodyState();
@@ -20,11 +25,23 @@ class _HomePageBodyState extends State<HomePageBody>{
   String errorMessage = '';
   String _selectedCategory = 'All Coffee';
 
+  List<Coffee> _filteredCoffees = [];  // Filtered Coffee stored here
+
   @override
   void initState(){
     super.initState();
     _loadCoffees();
     _loadCategories(); // Load categories from API - Optimization 2
+  }
+
+  @override
+  void didUpdateWidget(HomePageBody oldWidget) {
+    // TODO: implement didUpdateWidget
+    super.didUpdateWidget(oldWidget);
+    //When search query changes, update the filtered list
+    if(oldWidget.searchQuery != widget.searchQuery){
+      _filterCoffees();
+    }
   }
 
   Future<void> _loadCoffees() async {
@@ -35,6 +52,7 @@ class _HomePageBodyState extends State<HomePageBody>{
       setState(() {
         _allCoffees = coffees; // Cache them - Optimization 1
         coffeeList = coffees;
+        _filteredCoffees = coffees;  //Cache filtered items
         isLoading = false;
       });
     } catch(e){
@@ -65,19 +83,56 @@ class _HomePageBodyState extends State<HomePageBody>{
     }
   }
 
+  void _filterCoffees(){
+    final query = widget.searchQuery.toLowerCase().trim();
+
+    if(query.isEmpty){
+      //if search is empty, show all coffees for current category
+      setState(() {
+        _filteredCoffees = coffeeList;
+      });
+      return;
+    }
+
+    // Filter Coffees based on title or subtitle
+    final filtered = coffeeList.where((coffee){
+      final titleMatch = coffee.title.toLowerCase().contains(query);
+      final subtitleMatch = coffee.subtitle.toLowerCase().contains(query);
+      return titleMatch || subtitleMatch;
+    }).toList();
+
+    setState(() {
+      _filteredCoffees = filtered;
+    });
+  }
+
   void _handleCategoryFilter(String category){
     setState((){
       _selectedCategory =  category;
+      isCategoryLoading = true;
     });
 
     if(category == 'All Coffee'){
       // Use cached data instead of API call - Optimization 1
       setState(() {
         coffeeList = _allCoffees;
+        _filteredCoffees = _applySearchFilter(_allCoffees);
+        isCategoryLoading = false;
       });
     } else{
      _loadCoffeesByCategory(category);
     }
+  }
+
+  List<Coffee> _applySearchFilter(List<Coffee> coffees){
+    final query = widget.searchQuery.toLowerCase().trim();
+    if(query.isEmpty) return coffees;
+
+    return coffees.where((coffee){
+      final titleMatch = coffee.title.toLowerCase().contains(query);
+      final subtitleMatch = coffee.subtitle.toLowerCase().contains(query);
+      return titleMatch || subtitleMatch;
+    }).toList();
   }
 
   Future<void> _loadCoffeesByCategory(String category) async {
@@ -89,6 +144,7 @@ class _HomePageBodyState extends State<HomePageBody>{
       final coffees = await CoffeeApiService.getCoffeesByCategory(category);
       setState(() {
         coffeeList = coffees;
+        _filteredCoffees = _applySearchFilter(coffees);
         isCategoryLoading = false; // Optimization 3
       });
     } catch(e){
@@ -127,7 +183,8 @@ class _HomePageBodyState extends State<HomePageBody>{
                   backgroundColor: const Color(0xFFC67C4E),
                 ),
                 child: const Text(
-                    'Retry', style: TextStyle(color: Colors.white)),
+                    'Retry', style: TextStyle(color: Colors.white)
+                ),
               ),
             ],
           )
@@ -177,13 +234,39 @@ class _HomePageBodyState extends State<HomePageBody>{
 
 
             const SizedBox(height: 10), // Space between banner and filter tabs
-
             FilterTabs(
-          categories: categories, // Pass dynamic categories - Optimization 2
-          selectedCategory: _selectedCategory,
-          onCategorySelected: _handleCategoryFilter,
-        ),
+                  categories: categories, // Pass dynamic categories - Optimization 2
+                  selectedCategory: _selectedCategory,
+                  onCategorySelected: _handleCategoryFilter,
+            ),
         const SizedBox(height: 15),
+
+        //Show search results info
+        if(widget.searchQuery.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            child: Row(
+              children: [
+                Text(
+                  'Search results for "${widget.searchQuery}"',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${_filteredCoffees.length} found',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 10),
 
         // Show loading indicator for category switching - Optimization 3
         if (isCategoryLoading)
@@ -199,16 +282,32 @@ class _HomePageBodyState extends State<HomePageBody>{
             padding: const EdgeInsets.symmetric(
                 horizontal:
                 30.0), //Adds 30 pixels of padding on the left and right sides.
-            child: coffeeList.isEmpty
-                ? const Center(
-              child: Text(
-                'No coffees found',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-            )
+            child: _filteredCoffees.isEmpty
+                ? Center(
+              child: Padding(
+               padding: const EdgeInsets.all(20.0),
+               child: Column(
+                 children: [
+                   const Icon(
+                     Icons.search_off,
+                     size: 60,
+                     color: Colors.grey,
+                     ),
+                     const SizedBox(height: 16),
+                   Text(
+                     widget.searchQuery.isEmpty
+                        ? 'No coffees found in this categroy'
+                        : 'No coffees found for "${widget.searchQuery}"',
+                     style: const TextStyle(
+                       fontSize: 16,
+                       color: Colors.grey,
+                      ),
+                     textAlign: TextAlign.center,
+                     ),
+                    ],
+                   ),
+                  ),
+                 )
                 : GridView.builder(
               //Dynamically builds grid items on demand using a builder function — efficient for lists that can grow.
               physics:
@@ -229,11 +328,11 @@ class _HomePageBodyState extends State<HomePageBody>{
                 childAspectRatio:
                 0.60, //Controls the width-to-height ratio of each grid item
               ),
-              itemCount: coffeeList.length,
+              itemCount: _filteredCoffees.length,
               //Number of items to build
               itemBuilder: (context, index) {
                 //Function that builds each grid item dynamically.
-                final coffee = coffeeList[
+                final coffee = _filteredCoffees[
                 index]; //Fetches a single coffee object from the list.
                 return CoffeeCard(
                     coffee:

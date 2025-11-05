@@ -1,13 +1,14 @@
 // screen/order_page.dart
 import 'package:flutter/material.dart';
+import '../services/cart_service.dart';
 import '../models/coffee_model.dart';
 
 class OrderPage extends StatefulWidget {
-  final Coffee coffee;
+  //final Coffee coffee;
 
   const OrderPage({
-    super.key,
-    required this.coffee,
+    super.key
+    //required this.coffee,
   });
 
   @override
@@ -15,15 +16,84 @@ class OrderPage extends StatefulWidget {
 }
 
 class _OrderPageState extends State<OrderPage> {
+  final CartService _cartService = CartService();
   String _deliveryType = 'Deliver';
   bool _hasDiscount = true;
   double _deliveryFee = 2.0;
   double _discountedDeliveryFee = 1.0;
+  bool _isLoading = true;
+  String _errorMessage = '';
 
   @override
-  Widget build(BuildContext context) {
-    final double totalPrice = widget.coffee.price +
-        (_hasDiscount ? _discountedDeliveryFee : _deliveryFee);
+  void initState(){
+    super.initState();
+    _initializeCart();
+  }
+
+  Future<void> _initializeCart() async {
+    try {
+      await _cartService.initializeCart();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch(e){
+      setState(() {
+        _errorMessage = 'Failed to load cart: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshCart() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _initializeCart();
+  }
+
+  @override
+  Widget build(BuildContext context){
+    if(_isLoading){
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC67C4E)),
+        ),
+      ), );
+    }
+
+    if(_errorMessage.isNotEmpty){
+      return Scaffold(
+        body: Center(
+          child: Column(
+          mainAxisAlignment:MainAxisAlignment.center,
+            children: [
+              Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                  onPressed: _refreshCart,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC67C4E),
+                  ),
+                  child: const Text('Retry', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+     }
+
+  final cartItems = _cartService.cartItems;
+  final double subtotal = _cartService.totalPrice;
+  final double totalPrice = subtotal +
+      (_hasDiscount? _discountedDeliveryFee : _deliveryFee);
+
+    // final double totalPrice = widget.coffee.price +
+    //     (_hasDiscount ? _discountedDeliveryFee : _deliveryFee);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
@@ -45,9 +115,11 @@ class _OrderPageState extends State<OrderPage> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _refreshCart,
+        child: SingleChildScrollView(
+         padding: const EdgeInsets.all(20),
+         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Delivery Type Selection
@@ -59,11 +131,11 @@ class _OrderPageState extends State<OrderPage> {
             const SizedBox(height: 24),
 
             // Coffee Item
-            _buildCoffeeItemSection(),
+            _buildCoffeeItemSection(cartItems),
             const SizedBox(height: 24),
 
             // Discount & Payment Summary
-            _buildPaymentSection(totalPrice),
+            _buildPaymentSection(subtotal, totalPrice),
             const SizedBox(height: 24),
 
             // Payment Method
@@ -72,6 +144,7 @@ class _OrderPageState extends State<OrderPage> {
           ],
         ),
       ),
+     ),
       bottomNavigationBar: _buildBottomBar(totalPrice),
     );
   }
@@ -235,22 +308,48 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  Widget _buildCoffeeItemSection() {
+  Widget _buildCoffeeItemSection(List<Coffee> cartItems) {
     return Container(
-      padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+        Text(
+        'Order Items (${cartItems.length})',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...cartItems.map((item)  =>  _buildCartItems(item)).toList(),
+       ],
+      ),
+    );
+   }
+
+   Widget _buildCartItems(Coffee item){
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF9F9F9),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
-                image: AssetImage(widget.coffee.imagePath),
+                image: AssetImage(item.imagePath),
                 fit: BoxFit.cover,
               ),
             ),
@@ -261,16 +360,24 @@ class _OrderPageState extends State<OrderPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.coffee.title,
+                  item.title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.coffee.subtitle,
+                  '${item.subtitle} * Size: ${item.selectedSize}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Quantity: ${item.quantity}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -280,9 +387,9 @@ class _OrderPageState extends State<OrderPage> {
             ),
           ),
           Text(
-            '\$${widget.coffee.price.toStringAsFixed(2)}',
+            '\$${(item.price * item.quantity).toStringAsFixed(2)}',
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Color(0xFFC67C4E),
             ),
@@ -292,7 +399,7 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  Widget _buildPaymentSection(double totalPrice) {
+  Widget _buildPaymentSection(double subtotal,double totalPrice){
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -354,7 +461,7 @@ class _OrderPageState extends State<OrderPage> {
           const SizedBox(height: 16),
 
           _buildPaymentRow(
-              'Price', '\$${widget.coffee.price.toStringAsFixed(2)}'),
+              'Price', '\$${subtotal.toStringAsFixed(2)}'),
           const SizedBox(height: 12),
 
           _buildPaymentRow(

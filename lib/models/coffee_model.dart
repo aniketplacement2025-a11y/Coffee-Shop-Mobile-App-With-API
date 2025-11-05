@@ -33,6 +33,18 @@ class Coffee {
   });
 
   factory Coffee.fromJson(Map<String,dynamic> json){
+    //Handle price conversion safely
+    dynamic priceValue = json['price'];
+    double price;
+
+    if(priceValue is String){
+      price = double.tryParse(priceValue) ?? 0.0;
+    } else if(priceValue is int){
+      price = priceValue.toDouble();
+    } else {
+      price = (priceValue as num?)?.toDouble() ?? 0.0;
+    }
+
     return Coffee(id: json['id']??0,
         imagePath: json['imagePath']??'',
         title: json['title']??'',
@@ -43,7 +55,7 @@ class Coffee {
         description: json['description']?? '',
         necessary_supplies: json['necessary_supplies']??'',
         necessaryTools: json['necessaryTools']??'',
-        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        price: price, // Use the safely converted price
         isFavorite: json['isFavorite'] ?? false, // NEW: Add this
         quantity: json['quantity'] ?? 0, // NEW
         selectedSize: json['selectedSize'] ?? 'M', // NEW

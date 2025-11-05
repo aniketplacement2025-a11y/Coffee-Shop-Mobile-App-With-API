@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 // import 'package:coffee_shop_mobile_app_design_community_3971357995_f2f/figma_to_flutter.dart'
 //     as f2f;
 import 'dart:ui';
-import '../models/coffee_model.dart';
-//
-//
-//
-//
 import '../Home/home_page_body.dart';
 import '../Home/favorite_page_body.dart';
 import '../Home/cart_page_body.dart';
@@ -26,7 +21,9 @@ import '../Home/Tab/home_page_tab.dart';
 
 // Create a stateful widget for the main home page
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final HomePageTab? initialTab;
+  const HomePage({super.key, this.initialTab});
+  // const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -34,6 +31,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   HomePageTab _currentTab = HomePageTab.home;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial tab if provided
+    if (widget.initialTab != null) {
+      _currentTab = widget.initialTab!;
+    }
+  }
 
   // Method to change tabs
   void _changeTab(HomePageTab tab) {
@@ -42,11 +49,24 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _handleSearchChanged(String query){
+    setState(() {
+      _searchQuery = query;
+    });
+  }
+
+  void _handleFilterPressed(){
+    //U can implement filter functionality here
+    print('Filter button pressed');
+  }
+
   // Method to get the current body based on selected tab
   Widget _getCurrentBody() {
     switch (_currentTab) {
       case HomePageTab.home:
-        return const HomePageBody();
+        return HomePageBody(
+          searchQuery: _searchQuery,
+        );
       case HomePageTab.favorite:
         return const FavoritePageBody();
       case HomePageTab.cart:
@@ -67,11 +87,14 @@ class _HomePageState extends State<HomePage> {
           body: Stack(
             children: [
               // Header (fixed at top)
-              const Positioned(
+              Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: HomePageHeader(),
+                child: HomePageHeader(
+                  onSearchChanged: _handleSearchChanged,
+                  onFilterPressed: _handleFilterPressed,
+                ),
               ),
 
               // Body content (scrollable) - positioned below header and above footer

@@ -1,3 +1,4 @@
+import 'package:coffe_application_ui_figma/Home/Tab/home_page_tab.dart';
 import 'package:flutter/material.dart';
 // import 'package:coffee_shop_mobile_app_design_community_3971357995_f2f/bendis_widget.dart';
 // import 'package:coffee_shop_mobile_app_design_community_3971357995_f2f/figma_to_flutter.dart'
@@ -5,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/coffee_model.dart'; // Import from model file
 import '../services/cart_service.dart';
+import '../Home/Tab/home_page_tab.dart';
+import '../screen/home_page.dart';
+//Import for navigation
 
 class DetailPage extends StatefulWidget {
   final Coffee coffee;
@@ -20,6 +24,7 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   String _selectedSize = 'M';
+  bool _isAddToCart = true;
 
   //Cart Integration Starts From Here to 'Widget.build(BuildContext context)'
   final CartService _cartService = CartService();
@@ -41,7 +46,9 @@ class _DetailPageState extends State<DetailPage> {
     _cartService.addToCart(
       widget.coffee,
       size: _selectedSize,
+      price: _sizeAdjustedPrice.toStringAsFixed(2),
     );
+    _isAddToCart = false;
 
     //Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -52,8 +59,31 @@ class _DetailPageState extends State<DetailPage> {
     );
 
     //Navigate back or to cart
-    Navigator.pop(context);
+    // Navigator.pop(context);
   }
+
+  void _buyNow() {
+    //Add to cart first
+    if(_isAddToCart)
+    _cartService.addToCart(
+      widget.coffee,
+      size: _selectedSize,
+      price: _sizeAdjustedPrice.toStringAsFixed(2),
+    );
+
+    //Then navigate to cart page
+    Navigator.pushAndRemoveUntil(
+     context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(initialTab: HomePageTab.cart),
+      ), (route) => false,
+    );
+
+    // You'll need to implement tab switching to cart tab
+    //This depends on how your navigation is set up
+    // If using a state management solution, u can switch tabs programmatically
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +129,8 @@ class _DetailPageState extends State<DetailPage> {
           IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
             onPressed: () {
-              Navigator.pushReplacementNamed(context, '/home');
+              //Navigator.pushReplacementNamed(context, '/home');
+              Navigator.pop(context);
             },
           ),
           const Text(
@@ -283,44 +314,112 @@ class _DetailPageState extends State<DetailPage> {
 
 
   //Add to your build method - Add the price display and add to cart button
-  Widget _buildPriceAndAddButton() {
-    return Column(
-      children: [
-        Text(
-          '\$${_sizeAdjustedPrice.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 24,
+  // Widget _buildPriceAndAddButton() {
+  //   return Column(
+  //     children: [
+  //       Text(
+  //         '\$${_sizeAdjustedPrice.toStringAsFixed(2)}',
+  //         style: const TextStyle(
+  //           fontSize: 24,
+  //           fontWeight: FontWeight.bold,
+  //           color: Color(0xFF2F4B4E),
+  //         ),
+  //       ),
+  //
+  //       const SizedBox(height: 20),
+  //       ElevatedButton(
+  //         onPressed: _addToCart,
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: const Color(0xFFC67C4E),
+  //           minimumSize: const Size(double.infinity, 50),
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //           ),
+  //         ),
+  //         child: const Text(
+  //           'Add to Cart',
+  //           style: TextStyle(
+  //             color: Colors.white,
+  //             fontSize: 18,
+  //             fontWeight: FontWeight.bold,
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  // FIX: Added dynamic price display that updates with size selection
+  Widget  _buildDynamicPriceSection(){
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+         ),
+        ],
+      ),
+    child: Column(
+        children: [
+          const Text(
+             'Price',
+              style: TextStyle(
+               fontSize: 16,
+               color: Colors.grey,
+              ),
+            ),
+    const SizedBox(height: 8),
+    Text(
+    '\$${_sizeAdjustedPrice.toStringAsFixed(2)}',
+    style: const TextStyle(
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Color(0xFF2F4B4E),
-          ),
-        ),
-
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: _addToCart,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFC67C4E),
-            minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            ),),
+            const SizedBox(height: 16),
+            Text(
+              'Size: $_selectedSize * ${_getSizeDescription(_selectedSize)}',
+              style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+             ),
             ),
-          ),
-          child: const Text(
-            'Add to Cart',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          ],
         ),
-      ],
     );
   }
 
+  String _getSizeDescription(String size){
+    switch(size){
+      case 'S':
+        return 'Small (355 ml)';
+      case 'M':
+        return 'Medium (473 ml)';
+      case 'L':
+        return 'Large (591 ml)';
+      default:
+        return 'Medium (473 ml)';
+    }
+  }
+
   Widget _buildBottomBar(BuildContext context) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.fromLTRB(24.0, 10.0, 24.0, 20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -328,10 +427,11 @@ class _DetailPageState extends State<DetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Price',
-                  style: TextStyle(fontSize: 14, color: Colors.grey)),
+                  style: TextStyle(fontSize: 14, color: Colors.grey)
+              ),
               const SizedBox(height: 4),
               Text(
-                '\$${widget.coffee.price.toStringAsFixed(2)}', // Now converts double to formatted string
+                '\$${_sizeAdjustedPrice.toStringAsFixed(2)}', // Now converts double to formatted string
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -340,32 +440,53 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ],
           ),
+
+          //Buttons section
+          Row(
+            children: [
+              // Add to Cart Button
           ElevatedButton(
-            onPressed: () {
-              // FIX: Pass the current coffee data to OrderPage
-              Navigator.pushNamed(
-                context,
-                '/order',
-                arguments: widget.coffee, // This passes the selected coffee
-              );
-            },
+            onPressed: _addToCart,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFFC67C4E),
+              side: const BorderSide(color: Color(0xFFC67C4E)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            ),
+            child: const Text(
+              'Add to Cart',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          //Buy Now Button - Now goes to Cart
+          ElevatedButton(
+            onPressed: _buyNow,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFC67C4E),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
             ),
             child: const Text(
               'Buy Now',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
           ),
         ],
+      ),],
       ),
     );
   }

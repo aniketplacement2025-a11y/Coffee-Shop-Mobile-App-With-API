@@ -216,6 +216,7 @@
 import 'package:flutter/material.dart';
 import '../services/cart_service.dart';
 import '../models/coffee_model.dart';
+import '../screen/home_page.dart';
 
 class CartPageBody extends StatefulWidget {
   const CartPageBody({super.key});
@@ -225,14 +226,81 @@ class CartPageBody extends StatefulWidget {
 }
 
 class _CartPageBodyState extends State<CartPageBody> {
-  final CartService _cartService = CartService();
+  final CartService _cartService = CartService(); // This gets the singleton
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState(){ // Fixed the typo
+    super.initState();
+    _initializeCart();
+  }
+
+  Future<void> _initializeCart() async {
+    try {
+      print('Starting cart initalization...');
+      await _cartService.initializeCart();
+      print('Cart initialized successfully');
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch(e){
+      print('Error inititalizing cart: $e');
+      setState(() {
+        _errorMessage = 'Failed to load cart: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshCart() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _initializeCart();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if(_isLoading){
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC67C4E)),
+        ),
+      );
+    }
+
+    if(_errorMessage.isNotEmpty){
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            ElevatedButton(
+              onPressed: _refreshCart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC67C4E),
+              ),
+             child: const Text('Retry', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        )
+      );
+    }
+
     final cartItems = _cartService.cartItems;
     final totalPrice = _cartService.totalPrice;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+        onRefresh: _refreshCart,
+      child: SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(30.0),
         child: cartItems.isEmpty
@@ -240,15 +308,15 @@ class _CartPageBodyState extends State<CartPageBody> {
             : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Your Cart',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2F4B4E),
-              ),
-            ),
-            const SizedBox(height: 20),
+            // const Text(
+            //   'Your Cart',
+            //   style: TextStyle(
+            //     fontSize: 24,
+            //     fontWeight: FontWeight.bold,
+            //     color: Color(0xFF2F4B4E),
+            //   ),
+            // ),
+            const SizedBox(height: 10),
             ...cartItems.map((item) => _buildCartItem(item)).toList(),
             const SizedBox(height: 20),
             _buildTotalSection(totalPrice),
@@ -256,7 +324,7 @@ class _CartPageBodyState extends State<CartPageBody> {
             _buildCheckoutButton(context),
           ],
         ),
-      ),
+      ), ),
     );
   }
 
@@ -292,11 +360,7 @@ class _CartPageBodyState extends State<CartPageBody> {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              // Navigate to home tab (you'll need to implement tab switching)
-              // For now, just pop if navigated from somewhere
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
+              Navigator.pushNamed(context, '/home');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFC67C4E),
@@ -359,12 +423,12 @@ class _CartPageBodyState extends State<CartPageBody> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove, color: Color(0xFFC67C4E)),
-                  onPressed: () {
+                  onPressed: () async {
                     setState(() {
                       _cartService.updateQuantity(
                           item.id,
                           item.selectedSize,
-                          item.quantity - 1
+                          item.quantity - 1,
                       );
                     });
                   },
@@ -375,19 +439,19 @@ class _CartPageBodyState extends State<CartPageBody> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.add, color: Color(0xFFC67C4E)),
-                  onPressed: () {
+                  onPressed: () async {
                     setState(() {
                       _cartService.updateQuantity(
                           item.id,
                           item.selectedSize,
-                          item.quantity + 1
+                          item.quantity + 1,
                       );
                     });
                   },
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
+                  onPressed: () async {
                     setState(() {
                       _cartService.removeFromCart(item.id, item.selectedSize);
                     });
@@ -436,6 +500,10 @@ class _CartPageBodyState extends State<CartPageBody> {
   Widget _buildCheckoutButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
+        Navigator.pushNamed(
+            context,
+            '/order');
+
         // Navigate to checkout page
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
